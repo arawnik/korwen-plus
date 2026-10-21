@@ -54,4 +54,4 @@ more detailed architecture notes and conventions.
 
 ## License
 
-No license has been chosen yet; all rights reserved by the author.
+See [`LICENSE.md`](LICENSE.md).
