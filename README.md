@@ -54,4 +54,4 @@ more detailed architecture notes and conventions.
 
 ## License
 
-See [`LICENSE.md`](LICENSE.md).
+See [`LICENSE`](LICENSE).
