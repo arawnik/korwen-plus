@@ -1,0 +1,17 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Node (only used transiently for Lua syntax checks, never committed)
+node_modules/
+package.json
+package-lock.json
+
+# WoW packaging/local test artifacts
+*.zip
+/dist/

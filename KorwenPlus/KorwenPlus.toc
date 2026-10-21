@@ -1,0 +1,8 @@
+## Interface: 16001
+## Title: KorwenPlus
+## Notes: Small quality-of-life additions for WoW Forever.
+## Author: Korwen
+## Version: 0.1.0
+## SavedVariables: KorwenPlusDB
+
+Core\Init.lua
