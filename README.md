@@ -24,7 +24,9 @@ by the game client — no libraries, no build step.
   after changing (you'll be prompted).
 - **Improved Target of Target** — no portrait, and movable: open Edit Mode and drag the
   blue "Target of Target" box. Stays in Blizzard's default spot until moved.
-  Size and width can be adjusted in the settings. On by default.
+  Size and width can be adjusted in the settings and are saved per Edit Mode
+  layout. Optionally shows health and/or power percentages on the bars. On by
+  default.
 
 ## Usage
 
@@ -34,7 +36,10 @@ Settings are under **Options → AddOns → KorwenPlus**.
 | --- | --- |
 | `/korwenplus`, `/kp` | Opens the KorwenPlus settings page. |
 
-Settings are saved per account in the `KorwenPlusDB` saved variable.
+Settings are saved per character (in the account-wide `KorwenPlusDB` saved
+variable). Use **Copy settings from** on the settings page to copy another
+character's settings. Frame sizes and positions are saved per Edit Mode
+layout instead, so they follow whichever layout is active and aren't copied.
 
 ## Development
 

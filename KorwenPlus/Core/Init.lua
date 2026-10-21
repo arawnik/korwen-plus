@@ -10,10 +10,17 @@ Korwen.name = ADDON_NAME
 local defaults = {
     portrait3D = false,
     totEnabled = true,
-    totScale = 1.2,
-    totWidth = 1,
+    totHealthText = true,
+    totPowerText = false,
 }
 Korwen.defaults = defaults
+
+-- Settings saved per Edit Mode layout instead of per character (frame sizes and positions).
+local layoutDefaults = {
+    totScale = 1.2,
+    totWidth = 1.3,
+}
+Korwen.layoutDefaults = layoutDefaults
 
 -- Recursively fills missing keys in `db` from `defaults` without overwriting existing values.
 local function applyDefaults(db, source)
@@ -52,11 +59,46 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
     end
 end)
 
+-- KorwenPlusDB is account-wide so characters can copy each other's settings, but every
+-- character has its own table in KorwenPlusDB.characters, exposed as Korwen.db.
 Korwen:On("ADDON_LOADED", function(_, loadedAddon)
     if loadedAddon ~= ADDON_NAME then return end
-    KorwenPlusDB = applyDefaults(KorwenPlusDB or {}, defaults)
-    Korwen.db = KorwenPlusDB
+    if type(KorwenPlusDB) ~= "table" or type(KorwenPlusDB.characters) ~= "table" then
+        KorwenPlusDB = { characters = {} } -- also drops settings from before they were per character
+    end
+    KorwenPlusDB.layouts = KorwenPlusDB.layouts or {}
+    Korwen.characterKey = UnitName("player") .. " - " .. GetRealmName()
+    local characters = KorwenPlusDB.characters
+    characters[Korwen.characterKey] = applyDefaults(characters[Korwen.characterKey] or {}, defaults)
+    Korwen.db = characters[Korwen.characterKey]
 end)
+
+-- Settings for the active Edit Mode layout, or nil until Blizzard has loaded the layouts
+-- (EDIT_MODE_LAYOUTS_UPDATED). Layouts are matched by name; character-specific layouts
+-- are prefixed with the character, since other characters can have layouts with the same name.
+function Korwen:LayoutSettings()
+    if not (EditModeManagerFrame and EditModeManagerFrame.GetActiveLayoutInfo) then return end
+    local ok, info = pcall(EditModeManagerFrame.GetActiveLayoutInfo, EditModeManagerFrame)
+    if not ok or not info or not info.layoutName then return end
+    local key = info.layoutName
+    if info.layoutType == Enum.EditModeLayoutType.Character then
+        key = self.characterKey .. ": " .. key
+    end
+    KorwenPlusDB.layouts[key] = applyDefaults(KorwenPlusDB.layouts[key] or {}, layoutDefaults)
+    return KorwenPlusDB.layouts[key]
+end
+
+-- Copies another character's settings over this character's. Only keys in defaults are copied;
+-- sizes and positions are saved per Edit Mode layout, not per character.
+function Korwen:CopySettingsFrom(characterKey)
+    local source = KorwenPlusDB.characters[characterKey]
+    if not source or characterKey == self.characterKey then return end
+    for key in pairs(defaults) do
+        if source[key] ~= nil then
+            self.db[key] = source[key]
+        end
+    end
+end
 
 SLASH_KORWENPLUS1 = "/korwenplus"
 SLASH_KORWENPLUS2 = "/kp"

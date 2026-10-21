@@ -49,8 +49,16 @@ There is no compiler or test runner. "Testing" means:
   its own `...` vararg — this is the addon-wide "export" mechanism, not a
   global). It also defines:
   - `Korwen.defaults` / `Korwen.applyDefaults(db, defaults)` — recursively fills
-    missing keys into `KorwenPlusDB` (the single `SavedVariables` entry)
-    without clobbering existing user settings.
+    missing keys into the character's settings without clobbering existing
+    user settings.
+  - Per-character settings: `KorwenPlusDB` (the single account-wide
+    `SavedVariables` entry) holds `characters["Name - Realm"]`, and `Korwen.db`
+    is the current character's table. `Korwen:CopySettingsFrom(key)` copies
+    only keys in `Korwen.defaults`.
+  - Per-Edit-Mode-layout settings (frame sizes and positions):
+    `Korwen:LayoutSettings()` returns `KorwenPlusDB.layouts[name]` for the
+    active layout (character layouts prefixed with the character key), filled
+    from `Korwen.layoutDefaults`, or nil until Blizzard has loaded layouts.
   - `Korwen:On(event, handler)` — a tiny pub/sub event bus. **All modules
     register events through this, not their own `CreateFrame` +
     `RegisterEvent`.** `Korwen.db` is only populated once `ADDON_LOADED` fires
@@ -67,37 +75,52 @@ There is no compiler or test runner. "Testing" means:
   login. Removes the portrait of Blizzard's
   `TargetFrameToT` (reparented into a hidden frame, since Blizzard resets
   alpha/shown state) and replaces the ring art (`FrameTexture`) with its right
-  end mirrored onto the left, sized around the bars. `totWidth` widens the
-  health bar to the left. Both bars are then stretched past a shared span
-  centered in the box and clipped to it with rectangular masks (replacing
-  Blizzard's portrait-shaped ones), because the bar art doesn't fill its frame
-  and differs per power type.
+  end mirrored onto the left, sized around the bars. Blizzard's geometry is
+  measured once (`measure()`) and `applyWidth()` rebuilds box, bars and name
+  from it for the layout's `totWidth` (health bar widened to the left), only
+  on first show, width change and layout change. Both bars are stretched past
+  a shared span centered in the box and clipped to it with rectangular masks
+  (replacing Blizzard's portrait-shaped ones), because the bar art doesn't
+  fill its frame and differs per power type.
   While Edit Mode is open (`EventRegistry` callbacks
   `EditMode.Enter`/`EditMode.Exit`), it shows a draggable handle in its place.
-  The frame's center is saved to `Korwen.db.totPosition` in UIParent
-  coordinates (so `totScale` changes resize it in place) and scale/position
+  The frame's center is saved as the layout's `totPosition` in UIParent
+  coordinates (so `totScale` changes resize it in place); on layout change
+  (`EDIT_MODE_LAYOUTS_UPDATED`, hooked `SelectLayout`) it's re-applied, or
+  Blizzard's anchor (captured at load) restored. Scale/position
   are applied out of combat only — the frame is protected. Never replace
   `tot.Update`: `TargetFrame:Update()` calls it and then continues, so a
   replacement taints the whole target frame (secret-value errors).
+  Optional health/power percentages (`totHealthText`/`totPowerText`) come from
+  `UnitHealthPercent`/`UnitPowerPercent` with a 0–100 curve and are passed
+  straight into `SetFormattedText` (secret). Since Blizzard updates the ToT
+  per frame and `targettarget` gets no unit events, they refresh on a
+  `C_Timer` ticker that runs only while the frame is shown.
 - **`Core/Options.lua`** — loads last; registers the "KorwenPlus" page under
   Options > AddOns with Blizzard's `Settings` API.
   `addCheckbox(key, label, tooltip, opts)` and
   `addPercentSlider(key, label, tooltip, opts)` bind a control directly to a
   top-level key in `Korwen.db` (default from `Korwen.defaults[key]`) and return
-  its initializer. `opts.onChange` applies a setting live; prefer
+  its initializer. `opts.perLayout` binds to the active Edit Mode layout's
+  settings instead (a proxy setting, default from `Korwen.layoutDefaults`).
+  `opts.onChange` applies a setting live; prefer
   `opts.requiresReload = true` and applying settings only at load over live
   on/off logic: if any such setting differs from its login value, a
-  "Reload UI" popup is shown. `nestUnder(child, parent, parentKey)` indents a
-  sub-setting and disables it while the parent checkbox is off.
+  "Reload UI" popup is shown. The page is split by section headers
+  (`addHeader`) into "Character" and "Edit Mode layout" settings; put new
+  settings under the header matching where they're stored.
+  `enabledBy(child, key)` disables a setting while a checkbox is off.
 
 ## Conventions
 
 - **No third-party libraries.** Prefer reusing Blizzard's own frames/functions
   over reimplementing logic.
-- **Single `SavedVariables` table**: `KorwenPlusDB`, exposed as `Korwen.db` only
-  after `ADDON_LOADED`. All persisted settings go through
-  `Korwen.defaults`/`applyDefaults` so upgrades (adding a new default key)
-  don't require a migration step.
+- **Single `SavedVariables` table**: `KorwenPlusDB`, with the current
+  character's settings exposed as `Korwen.db` only after `ADDON_LOADED`. All
+  persisted settings go through `Korwen.defaults`/`Korwen.layoutDefaults` and
+  `applyDefaults` so upgrades (adding a new default key) don't require a
+  migration step. Per-character settings belong in `Korwen.defaults`; frame
+  sizes and positions belong per Edit Mode layout (`Korwen.layoutDefaults`).
 - **Module files never call `RegisterEvent` directly** — always go through
   `Korwen:On(event, handler)` so handlers for the same event share one real
   `Frame`/`OnEvent` dispatcher.
