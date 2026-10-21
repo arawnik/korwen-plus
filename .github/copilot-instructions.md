@@ -5,8 +5,8 @@ level-60 cap, client build `1.60.1.70374`, TOC `## Interface: 16001`).
 It has no build system, package manager, or external libraries — it's plain
 Lua/XML loaded directly by the game client per the `.toc` file list.
 
-The addon is intentionally minimal: `main` contains only the core
-initialization, and features are added one at a time. Earlier experiments
+The addon is intentionally minimal: `main` contains the core initialization
+plus a few small features added one at a time. Earlier experiments
 (custom unit frames, combat text, auto actions, options panel) live on the
 `prototype` branch for reference — it is not merged into `main`.
 
@@ -56,8 +56,20 @@ There is no compiler or test runner. "Testing" means:
     `RegisterEvent`.** `Korwen.db` is only populated once `ADDON_LOADED` fires
     for this addon, so any handler that touches `Korwen.db` must not run
     before that.
-  - The `/korwenplus` and `/kp` slash commands, which call `Korwen:OpenOptions()`
-    if a module defines it.
+  - The `/korwenplus` and `/kp` slash commands, which call `Korwen:OpenOptions()`.
+- **`Features/Portraits.lua`** — if `portrait3D` is on at login, lays a
+  `PlayerModel` over the 2D portrait of Blizzard's player/target/focus/pet
+  frames (created lazily on first use, after Blizzard has set frame levels).
+  The 2D portrait is only made transparent while the unit is visible, so it
+  stays as the fallback for out-of-range units. When the setting is off,
+  nothing is registered; changing it takes effect after `/reload`.
+- **`Core/Options.lua`** — loads last; registers the "KorwenPlus" page under
+  Options > AddOns with Blizzard's `Settings` API.
+  `addCheckbox(key, label, tooltip, requiresReload)` binds a checkbox directly
+  to a top-level boolean in `Korwen.db` (default from `Korwen.defaults[key]`) —
+  add new toggles by calling it again. Prefer `requiresReload = true` and
+  applying settings only at load over live on/off logic: if any such setting
+  differs from its login value, a "Reload UI" popup is shown.
 
 ## Conventions
 
@@ -70,8 +82,8 @@ There is no compiler or test runner. "Testing" means:
 - **Module files never call `RegisterEvent` directly** — always go through
   `Korwen:On(event, handler)` so handlers for the same event share one real
   `Frame`/`OnEvent` dispatcher.
-- **TOC load order matters**: `Core/Init.lua` must load first. When adding a
-  new file, append it to the file list in `KorwenPlus.toc` in the position
-  that matches its dependencies.
+- **TOC load order matters**: `Core/Init.lua` must load first and
+  `Core/Options.lua` last. When adding a new feature file, put it between them
+  in `KorwenPlus.toc`.
 - Keep each feature in its own file with its own `Korwen.db` settings
   sub-table, independent of other features.

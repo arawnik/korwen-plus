@@ -6,3 +6,5 @@
 ## SavedVariables: KorwenPlusDB
 
 Core\Init.lua
+Features\Portraits.lua
+Core\Options.lua

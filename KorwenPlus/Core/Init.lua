@@ -7,7 +7,9 @@ _G.KorwenPlus = Korwen -- exposed for /dump and in-game debugging only; code sho
 
 Korwen.name = ADDON_NAME
 
-local defaults = {}
+local defaults = {
+    portrait3D = false,
+}
 Korwen.defaults = defaults
 
 -- Recursively fills missing keys in `db` from `defaults` without overwriting existing values.
