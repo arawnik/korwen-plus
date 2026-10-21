@@ -63,13 +63,32 @@ There is no compiler or test runner. "Testing" means:
   The 2D portrait is only made transparent while the unit is visible, so it
   stays as the fallback for out-of-range units. When the setting is off,
   nothing is registered; changing it takes effect after `/reload`.
+- **`Features/TargetOfTarget.lua`** — only active if `totEnabled` is on at
+  login. Removes the portrait of Blizzard's
+  `TargetFrameToT` (reparented into a hidden frame, since Blizzard resets
+  alpha/shown state) and replaces the ring art (`FrameTexture`) with its right
+  end mirrored onto the left, sized around the bars. `totWidth` widens the
+  health bar to the left. Both bars are then stretched past a shared span
+  centered in the box and clipped to it with rectangular masks (replacing
+  Blizzard's portrait-shaped ones), because the bar art doesn't fill its frame
+  and differs per power type.
+  While Edit Mode is open (`EventRegistry` callbacks
+  `EditMode.Enter`/`EditMode.Exit`), it shows a draggable handle in its place.
+  The frame's center is saved to `Korwen.db.totPosition` in UIParent
+  coordinates (so `totScale` changes resize it in place) and scale/position
+  are applied out of combat only — the frame is protected. Never replace
+  `tot.Update`: `TargetFrame:Update()` calls it and then continues, so a
+  replacement taints the whole target frame (secret-value errors).
 - **`Core/Options.lua`** — loads last; registers the "KorwenPlus" page under
   Options > AddOns with Blizzard's `Settings` API.
-  `addCheckbox(key, label, tooltip, requiresReload)` binds a checkbox directly
-  to a top-level boolean in `Korwen.db` (default from `Korwen.defaults[key]`) —
-  add new toggles by calling it again. Prefer `requiresReload = true` and
-  applying settings only at load over live on/off logic: if any such setting
-  differs from its login value, a "Reload UI" popup is shown.
+  `addCheckbox(key, label, tooltip, opts)` and
+  `addPercentSlider(key, label, tooltip, opts)` bind a control directly to a
+  top-level key in `Korwen.db` (default from `Korwen.defaults[key]`) and return
+  its initializer. `opts.onChange` applies a setting live; prefer
+  `opts.requiresReload = true` and applying settings only at load over live
+  on/off logic: if any such setting differs from its login value, a
+  "Reload UI" popup is shown. `nestUnder(child, parent, parentKey)` indents a
+  sub-setting and disables it while the parent checkbox is off.
 
 ## Conventions
 

@@ -7,4 +7,5 @@
 
 Core\Init.lua
 Features\Portraits.lua
+Features\TargetOfTarget.lua
 Core\Options.lua

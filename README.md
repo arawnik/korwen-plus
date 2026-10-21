@@ -22,6 +22,9 @@ by the game client — no libraries, no build step.
 - **3D portraits** — replaces the flat portraits on the player, target, focus
   and pet frames with animated 3D models. Off by default; requires a UI reload
   after changing (you'll be prompted).
+- **Improved Target of Target** — no portrait, and movable: open Edit Mode and drag the
+  blue "Target of Target" box. Stays in Blizzard's default spot until moved.
+  Size and width can be adjusted in the settings. On by default.
 
 ## Usage
 

@@ -9,6 +9,9 @@ Korwen.name = ADDON_NAME
 
 local defaults = {
     portrait3D = false,
+    totEnabled = true,
+    totScale = 1.2,
+    totWidth = 1,
 }
 Korwen.defaults = defaults
 
